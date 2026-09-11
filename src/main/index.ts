@@ -6,6 +6,7 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   ipcMain,
   Menu,
   nativeTheme,
@@ -141,6 +142,12 @@ import { aboutDetail, bundledHarnessVersion } from './version-info'
 import { windowsMenuViewBounds } from './windows-menu-view'
 import { shouldKeepRunningInBackground } from './close-to-tray'
 import {
+  decideToggleAction,
+  HOTKEY_STORAGE_KEY,
+  registerGlobalHotkey,
+  type GlobalHotkeyHandle
+} from './global-hotkey'
+import {
   MAIN_WINDOW_RECOVERY_RELOAD_COOLDOWN_MS,
   shouldReloadAfterMainWindowRendererLoss
 } from './main-window-recovery'
@@ -172,6 +179,7 @@ let windowsMenuOpen = false
 let windowsMenuDark = false
 let mobileWindow: BrowserWindow | undefined
 let tray: Tray | undefined
+let globalHotkey: GlobalHotkeyHandle | undefined
 let runtime: HarnessRuntime
 let desktopStorageManager: DesktopStorageManager | undefined
 let mobileBridge: LanMobileBridge
@@ -887,15 +895,74 @@ function restoreMainWindow(): void {
   }
 }
 
+/**
+ * Summon or dismiss the main window, driven by the global hotkey.
+ *
+ * A focused window hides on the next press, so one shortcut is both "bring the
+ * agent up" and "put it away"; any other state restores, which is what a
+ * background app needs after the user switched away.
+ */
+function toggleMainWindow(): void {
+  const window = mainWindow
+  const alive = window !== undefined && !window.isDestroyed()
+  const action = decideToggleAction({
+    hasWindow: alive,
+    isMinimized: alive && window.isMinimized(),
+    isFocused: alive && window.isFocused(),
+    // Electron's `App` has no `isFocused()`; "this app owns the focused window"
+    // is the fact the decision actually needs.
+    isAppFocused: BrowserWindow.getFocusedWindow() !== null
+  })
+
+  if (action === 'hide') {
+    // `app.hide()` rather than `window.hide()` on macOS: hiding the window still
+    // leaves the application active and its menus in the menu bar, so the next
+    // keystroke would go to a window that is not on screen.
+    if (process.platform === 'darwin') app.hide()
+    else window?.hide()
+    return
+  }
+
+  restoreMainWindow()
+}
+
+/**
+ * Install the global hotkey from the persisted preference.
+ *
+ * A registration that loses to another application is reported and leaves the
+ * app usable through the tray and the Dock; it must not be fatal.
+ */
+function installGlobalHotkey(): void {
+  globalHotkey?.dispose()
+  globalHotkey = undefined
+
+  const stored = desktopStorageManager?.getItem(HOTKEY_STORAGE_KEY) ?? null
+  const handle = registerGlobalHotkey(globalShortcut, stored, toggleMainWindow)
+  if (handle === undefined) {
+    if (stored !== null && stored.trim() !== '') {
+      console.warn(`desktop: global hotkey ${JSON.stringify(stored)} is unavailable; it may be claimed by another application`)
+    }
+    return
+  }
+  globalHotkey = handle
+}
+
 function ensureTray(): void {
   if (process.platform !== 'win32' || tray) return
 
   const locale = harnessLocale()
+  const toggleLabel = locale === 'zh' ? '显示 / 隐藏 DSH Desktop' : 'Show / Hide DSH Desktop'
+  const hotkeyLabel = locale === 'zh' ? '全局热键' : 'Global hotkey'
   tray = new Tray(desktopIconPath())
   tray.setToolTip('DSH Desktop')
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: locale === 'zh' ? '显示 DSH Desktop' : 'Show DSH Desktop', click: restoreMainWindow },
+      { label: toggleLabel, click: toggleMainWindow },
+      { type: 'separator' },
+      // Surfacing the binding here is the only in-app discovery path for a
+      // system-wide shortcut.
+      { label: `${hotkeyLabel}: ${globalHotkey?.accelerator ?? '—'}`, enabled: false },
       { type: 'separator' },
       { label: locale === 'zh' ? '退出' : 'Exit', click: () => app.quit() }
     ])
@@ -2618,13 +2685,15 @@ async function bootstrap(): Promise<void> {
   launchDirectory = await ensureLaunchRoot(app.getPath('userData'))
   registerUpdateHandlers()
   nativeTheme.themeSource = harnessThemePreference()
-  ensureTray()
   const dshHome = join(app.getPath('userData'), 'harness')
   desktopStorageManager = new DesktopStorageManager(join(dshHome, 'profiles', 'web'), {
     onError: (error, context) => {
       console.warn(`[desktop-storage] error during ${context}:`, error)
     }
   })
+  // Both read the persisted preference, so they follow the storage manager.
+  installGlobalHotkey()
+  ensureTray()
   createWindow()
   runtime = new HarnessRuntime({
     dshEntryPath: dshEntryPath(),
@@ -2921,6 +2990,11 @@ if (isDaemonLaunch(process.env, process.platform)) {
       quitting = true
       desktopStorageManager?.flushSync()
       stopUpdateManager()
+      // A global accelerator outlives the window, so release it before the
+      // process goes away; the OS otherwise keeps the binding reserved for the
+      // rest of the session and blocks the next launch from claiming it.
+      globalHotkey?.dispose()
+      globalHotkey = undefined
       // Windows leaves the tray icon behind as a ghost until the user hovers
       // over it unless it is destroyed explicitly before the process exits.
       if (tray && !tray.isDestroyed()) tray.destroy()
