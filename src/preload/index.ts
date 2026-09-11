@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import type { AvailableRelease, UpdateStatus } from '../shared/contracts'
 import { setupDesktopStoragePersistence } from './desktop-storage'
 import {
@@ -10,9 +10,19 @@ import {
 import { isPluginLoadError } from './plugin-error-view'
 import { findBootFailureText } from './boot-failure'
 import { mountWindowsTitlebarLayout } from './windows-titlebar'
+import { eventsStreamIdFromOpen, notificationForFrame } from '../main/remote-event-notify'
+import { WEBSOCKET_HOOK_SOURCE } from '../main/desktop-notify'
 
 // Intercept and persist localStorage to disk storage before any page script executes
 setupDesktopStoragePersistence()
+
+// Install the WebSocket observer in the page's main world before any page
+// script runs. Doing this from the main process on `did-finish-load` is too
+// late: the official client has already opened its Remote socket by then, and
+// a wrap applied afterwards never sees a frame.
+void webFrame.executeJavaScript(WEBSOCKET_HOOK_SOURCE).catch((error: unknown) => {
+  console.warn('[desktop-notify] could not install the WebSocket hook', error)
+})
 
 const ROOT_ID = 'dsh-desktop-update-root'
 const MOBILE_BUTTON_ID = 'dsh-desktop-mobile-button'
@@ -1184,3 +1194,62 @@ if (document.readyState === 'loading') {
 } else {
   initializeUi()
 }
+
+/**
+ * Desktop notifications for the events that stop and wait for a person.
+ *
+ * The main-world hook installed by the main process posts raw Harness Remote
+ * frames here; this side decides which of them deserve a notification, so the
+ * main process receives a handful of messages rather than one per frame.
+ *
+ * `$events` is the stream the client opens to receive forwarded host events,
+ * and the two events that block on a human are an approval request and a user
+ * question. Everything else on the stream is progress noise and stays here.
+ */
+let activeEventsStreamId: string | undefined
+let lastNotificationKey = ''
+let lastNotificationAt = 0
+const NOTIFICATION_COOLDOWN_MS = 4000
+
+/**
+ * Desktop notifications for the events that stop and wait for a person.
+ *
+ * The main-world hook cannot reach this isolated world directly, so it posts
+ * each Remote frame through the shared window object. This side decides which
+ * frames deserve a notification, which keeps IPC to a handful of messages
+ * instead of one per WebSocket frame.
+ */
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return
+  const payload = event.data as { __dshNotifyFrame?: unknown; channel?: unknown; data?: unknown } | null
+  if (payload === null || typeof payload !== 'object') return
+  if (payload.__dshNotifyFrame !== true) return
+  if (payload.channel !== 'recv' || typeof payload.data !== 'string') return
+
+  let decoded: unknown
+  try {
+    decoded = JSON.parse(payload.data)
+  } catch {
+    return
+  }
+
+  // Learn the stream id from its opening frame, then attribute later items.
+  const openedEventsStream = eventsStreamIdFromOpen(decoded)
+  if (openedEventsStream !== undefined) {
+    activeEventsStreamId = openedEventsStream
+    return
+  }
+
+  const notification = notificationForFrame(decoded, activeEventsStreamId)
+  if (notification === undefined) return
+
+  // The Host can re-forward the same pending request; one notification per
+  // request is the point, so collapse immediate repeats.
+  const key = `${notification.event}\u0000${notification.body}`
+  const now = Date.now()
+  if (key === lastNotificationKey && now - lastNotificationAt < NOTIFICATION_COOLDOWN_MS) return
+  lastNotificationKey = key
+  lastNotificationAt = now
+
+  ipcRenderer.send('dsh:desktop-notification', notification)
+})

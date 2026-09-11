@@ -10,6 +10,7 @@ import {
   ipcMain,
   Menu,
   nativeTheme,
+  Notification,
   shell,
   Tray,
   utilityProcess,
@@ -141,6 +142,7 @@ import { upgradePluginToGeneration } from './state/plugin-upgrade'
 import { aboutDetail, bundledHarnessVersion } from './version-info'
 import { windowsMenuViewBounds } from './windows-menu-view'
 import { shouldKeepRunningInBackground } from './close-to-tray'
+import { NOTIFY_CHANNEL, type DesktopNotification } from './desktop-notify'
 import {
   decideToggleAction,
   HOTKEY_STORAGE_KEY,
@@ -893,6 +895,42 @@ function restoreMainWindow(): void {
   } else if (snapshot?.phase === 'idle') {
     void launchHarness().catch(showUnexpectedError)
   }
+}
+
+/**
+ * Show desktop notifications for the Harness events that block on a person.
+ *
+ * Registered once at startup. A notification is only useful when the user is
+ * elsewhere, so it is suppressed while this app already owns the focused
+ * window — at that point the in-app prompt is right in front of them.
+ */
+function registerDesktopNotifications(): void {
+  ipcMain.on(NOTIFY_CHANNEL, (_event, payload: unknown) => {
+    const notification = payload as DesktopNotification | undefined
+    if (
+      notification === undefined ||
+      typeof notification.title !== 'string' ||
+      typeof notification.body !== 'string'
+    ) {
+      return
+    }
+
+    if (BrowserWindow.getFocusedWindow() !== null) return
+    if (!Notification.isSupported()) return
+
+    try {
+      const native = new Notification({
+        title: notification.title,
+        body: notification.body,
+        silent: false
+      })
+      // Clicking the notification is the user's way back to the prompt.
+      native.on('click', restoreMainWindow)
+      native.show()
+    } catch (error) {
+      console.warn(`[desktop-notify] could not show a notification: ${String(error)}`)
+    }
+  })
 }
 
 /**
@@ -2694,6 +2732,7 @@ async function bootstrap(): Promise<void> {
   // Both read the persisted preference, so they follow the storage manager.
   installGlobalHotkey()
   ensureTray()
+  registerDesktopNotifications()
   createWindow()
   runtime = new HarnessRuntime({
     dshEntryPath: dshEntryPath(),
