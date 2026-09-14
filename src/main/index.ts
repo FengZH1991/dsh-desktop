@@ -118,7 +118,7 @@ import {
   registerUpdateHandlers,
   startUpdateManager,
   stopUpdateManager
-} from './update/update-manager'
+} from './update/updater-router'
 import type { RuntimeSnapshot } from '../shared/contracts'
 import { resolveHarnessLocale } from './application-locale'
 import { installContextMenu } from './context-menu'
