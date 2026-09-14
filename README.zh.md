@@ -1,129 +1,116 @@
 <h1 align="center">
   <img src="docs/images/readme-logo-black-v020.png" width="64" alt="DSH Desktop Logo" valign="middle" />
-  DSH Desktop
+  DSH Desktop —— 社区 Fork
 </h1>
 
 <p align="center">
-  为 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 打造的本地优先、跨平台桌面应用。
+  为 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 打造的本地优先桌面应用。
+  本仓库 fork 自 <a href="https://github.com/dataelement/dsh-desktop">dataelement/dsh-desktop</a>，
+  增加了适用于未签名构建的自托管自动更新渠道。
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ru.md">Русский</a> · <a href="README.es.md">Español</a> · <a href="README.pt.md">Português</a>
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-171513.svg" /></a>
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-171513.svg" />
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-x64-171513.svg" />
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-Apple%20Silicon-171513.svg" />
+  <a href="https://github.com/FengZH1991/dsh-desktop/releases"><img alt="下载" src="https://img.shields.io/badge/download-releases-171513.svg" /></a>
 </p>
 
-![DSH Desktop 的 Preset、模型提供方、手机控制与可编辑 PPT 生成功能](docs/images/dsh-desktop-hero-v021.png)
+> [!NOTE]
+> 这是**非官方的社区 fork**，不是官方 DSH Desktop。
+> 如需官方签名、公证过的正式产品（macOS Intel/ARM、Windows x64），
+> 请使用 [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop)
+> 和官网 [dshdesktop.com](https://www.dshdesktop.com/)。
 
-<p align="center"><strong>使用 DeepSeek 官方模型或主流第三方模型，管理可移植的 Agent Preset，在手机上继续 Harness 会话，并将材料生成可继续编辑的 PPTX。</strong></p>
+## 为什么会有这个 fork
 
-DSH Desktop 把本地 DeepSeek Harness 封装为可安装的桌面应用。它会自动启动 Harness，把 Profile、插件、工作区、模型配置和会话保存在应用安装目录之外，并在本地 Runtime 就绪后直接进入完整 Harness 界面。
+官方桌面版从厂商的签名发布源自动更新，这套机制依赖 Apple Developer ID
+签名证书——个人自建的副本没有证书，只会永远落后、又无法走官方渠道升级。
+本 fork 增加了一个任何 fork 维护者都能用 **自己的 GitHub Releases** 运营的
+更新渠道，不需要任何签名证书。
 
-> [!IMPORTANT]
-> DSH Desktop 当前处于早期预览阶段，基于仍在快速迭代的 `@deepseek-ai/dsh@0.1.2-rc.1`。macOS 正式包已完成代码签名并通过 Apple 公证；Windows x64 安装包也已完成代码签名。随着下载量、安装量和发行者信誉逐步积累，Windows 安全提示会逐渐减少，但不会立即消失。
+## 与上游的差异
 
-## 下载安装
+包含上游 0.1.1 的全部功能，另外增加：
 
-我们提供稳定版和预览版：**稳定版**可在[官网](https://dshdesktop.com/zh/)下载，推荐日常使用；**预览版**可在 [GitHub Releases](https://github.com/dataelement/dsh-desktop/releases) 中选择标记为 **Pre-release** 的版本。
+- **面向未签名构建的自托管自动更新** —— 应用检查本仓库 GitHub Releases 上的
+  `latest-mac.json` 清单，SHA-512 校验下载内容，然后用替换式安装器完成升级
+  （解压 → 校验是同一个应用 → 退出后换包 → 自动重启，失败自动回滚）。
+  上游的更新界面、状态机和「跳过此版本」行为原样复用；
+  fork 安装器暂不支持 Windows。
+- **全局快捷键** 唤起/隐藏窗口。
+- **原生桌面通知**：有人在等你看的事件会弹系统通知。
+- **一键发布脚本** —— `npm run release:local` 自动完成版本递增、打包、
+  哈希计算、发布 GitHub Release 并附带更新清单。
+- fork 版本号采用 `<上游版本>-feng.N` 形式（如 `0.1.1-feng.2`），
+  与上游版本号干净排序。
 
-预览版除了包含我们的新增功能，还会积极跟进 DeepSeek Harness 官方最新版本，可能与社区插件不兼容，**不建议普通用户使用**。欢迎愿意尝鲜的用户体验并在社区反馈；经尝鲜用户验证后，我们才会向全体社区用户推送。
+## 下载与安装（macOS Apple Silicon）
 
-安装版会在启动后及每六小时检查更新。发现新版本时，DSH Desktop 会先询问用户；同意后才开始下载，只有选择“重新启动并安装”后才会进入安装。你也可以从应用菜单手动检查，或跳过当前版本而不影响后续版本提示。
+从 [Releases](https://github.com/FengZH1991/dsh-desktop/releases) 下载
+`dsh-desktop-mac-arm64.zip`（或 DMG）。
 
-## 加入社区
-
-<p align="center">
-  使用微信扫描下方二维码，加入 DSH Desktop 微信交流群。<br />
-  <img src="docs/images/wechat-group-20260815.png" width="220" alt="DSH Desktop 微信群二维码" /><br />
-  也可以加入 <a href="https://discord.gg/he2gAKCpj">DSH Desktop Discord 社区</a>。
-</p>
-
-## DSH Desktop 带来了什么
-
-DeepSeek Harness 已经提供 Agent Runtime 与 Web UI。DSH Desktop 在此基础上补齐真正的桌面宿主能力：
-
-- 自动启动和停止 Harness，不需要另开 CLI 或浏览器标签页
-- 通过系统原生目录选择器添加和管理项目工作区
-- 支持 DeepSeek 官方模型与主流第三方模型提供方
-- 将完整的自定义 Agent Preset 导入或导出为便携的 [`.dshpreset` 压缩包](docs/preset-packages.md)，安装前检查命名冲突并提示信任风险
-- 通过内置 PPT 模式将材料生成并交付为可继续编辑的 PPTX
-- 应用升级时保留 Profile、插件、工作区、会话和模型配置
-- 识别 Harness 启动或前端插件故障，把诊断写入 `harness.log` 并提供引导恢复入口
-- 提供不破坏用户数据的安全模式，临时屏蔽第三方插件
-- 让已配对的手机通过局域网或可选的临时公网隧道继续会话
-- 在应用内检查桌面更新，并由用户决定是否下载和安装
-- 针对 macOS 和 Windows 优化原生菜单、标题栏、窗口焦点、主题和品牌体验
-
-## PPT 生成
-
-点击 **PPT** 按钮，选择模板，再描述你想制作的内容。内置 **16 套模板、192 种版式**，可输出可继续编辑的 PPTX。模板预览统一使用英文，生成内容支持中文和英文，并配有对应字体设置；预览语言不决定输出语言。
-
-PPT 功能保持预装，相关自动提示词仅在选中 PPT 按钮的会话中生效。模板、校验和参考来源详见 [PPT 说明](packages/ppt-runtime/README.md)。
-
-## 手机连接
-
-从 `Harness` 菜单选择“连接手机…”，再扫描配对二维码。手机获得会话访问权限前，桌面端必须明确批准连接。
-
-Harness 本身始终运行在随机的 `127.0.0.1` 端口。手机访问由独立的配对 Bridge 提供：可以只在局域网内使用，也可以在你选择远程访问时启用临时 Cloudflare Quick Tunnel。桌面端断开连接后，手机会话随即失效。
-
-Cloudflare 启动失败时会尝试 Pinggy。若已显示 Cloudflare 配对链接，但手机无法打开，可点击“**扫码打不开？换一条线路**”切换到 Pinggy。
-
-## 安全模式与故障恢复
-
-如果第三方插件导致启动或页面渲染异常，DSH Desktop 会结合 Runtime 与前端证据定位相关插件，并打开引导式恢复界面。
-
-从 `Harness` 菜单选择“以安全模式重启…”，应用会使用只包含官方核心 Bundle 的隔离 Profile 启动。正常 Profile 中的第三方插件会被屏蔽，但 Agent、会话、模型配置和工作区仍然可用。你可以从页面顶部的安全模式提示卸载选中的问题插件，或恢复正常启动。
-
-恢复页面会检查插件是否有兼容更新；有可用版本时，可升级对应插件，安全模式还支持批量升级。需要帮助时，鼠标悬停“**微信群**”即可显示二维码，点击 **Discord** 则会打开社区链接。
-
-当正常界面无法进入时，也可以通过 `--safe-mode` 启动。例如 macOS：
+构建产物**未签名、未公证**，macOS Gatekeeper 首次启动会警告——
+右键点击应用选择「打开」，或执行：
 
 ```sh
-open -a "DSH Desktop" --args --safe-mode
+xattr -dr com.apple.quarantine "/Applications/DSH Desktop.app"
 ```
 
-## 本地数据与安全边界
+安装后，应用会在启动后不久及每六小时自动检查 fork 更新，
+通过自己的「重启并安装」流程完成升级；也可在应用菜单手动检查。
 
-- Harness Web UI 只运行在随机回环端口。
-- Renderer 不具备 Node.js 权限，并启用 Context Isolation 与 Sandbox。
-- WebView、不可信站内跳转和非预期权限请求会被阻止。
-- 外部网页链接交给系统浏览器打开。
-- Profile 与会话保存在 Electron 的用户级应用数据目录，不在安装目录内。
-- 手机访问需要短时配对 Token 和桌面端明确批准。
+## 运营你自己的更新渠道
 
-## 平台支持
+更新源只是 GitHub Releases 上的一个 JSON 清单，任何 fork 都可以自建渠道：
 
-| 平台 | 分发形式 | 状态 |
-| --- | --- | --- |
-| macOS Apple Silicon | 已签名并通过公证的 DMG/ZIP | 支持 |
-| macOS Intel | 已签名并通过公证的 DMG/ZIP | 支持 |
-| Windows x64 | 已完成代码签名的 NSIS 安装包 | 支持 |
-| Windows ARM64 | — | 当前不支持 |
-| Linux | — | 当前不支持 |
+1. 编辑 [`build/fork-update.json`](build/fork-update.json)，指向**你自己的**仓库。
+2. 用 fork 打包配置构建：
+   ```sh
+   npm install          # 会自动应用 patches/ 下的 patch-package 补丁
+   npm run test && npm run typecheck
+   npm run package:fork:mac:arm64
+   ```
+3. 发布版本（需要 [`gh`](https://cli.github.com/) 登录，令牌需 `repo` 权限）：
+   ```sh
+   npm run release:local          # 加 --dry-run 可预览
+   ```
 
-Harness 包含目标平台原生依赖，因此每一种正式安装包都在对应操作系统与架构上构建。
+发布脚本会自动递增 `-feng.N` 后缀、提交并推送、构建 zip/dmg、
+计算 SHA-512 清单，并把所有产物附加到 GitHub Release。
+已安装的副本会自动发现新版本。
 
-## 开发与架构
+如果构建产物中同时存在上游 `app-update.yml` 和 `fork-update.json`，
+上游更新器优先——只有上游渠道不存在时 fork 渠道才生效，
+因此将来合并上游对 `src/main/update/update-manager.ts` 的改动不会冲突。
 
-欢迎参与贡献。工程说明已拆分为独立文档：
+## 文档
 
-- [开发指南](docs/development.md) — 本地环境、验证、补丁维护与原生平台打包
-- [运行架构](docs/architecture.md) — 启动流程、持久化数据、安全边界、故障恢复、手机连接与更新
-- [发布手册](docs/release-runbook.md) — 签名与正式发布控制
-- [Preset 包格式](docs/preset-packages.md) — 可移植 Agent Preset 契约
+- [架构](docs/architecture.md) 与 [开发指南](docs/development.md) —— 继承自上游；
+  其中关于官方更新源与代码签名的章节描述的是**上游产品**，不适用于本 fork。
+- [Preset 包格式](docs/preset-packages.md)
+- [PPT 运行时指南](packages/ppt-runtime/README.md)
 
-提交修改前请运行 `npm test`、`npm run typecheck` 和 `npm run build`，并实际操作受影响的应用流程。请勿在 Issue、日志、截图或测试数据中提交真实 API Key。
+## 第三方项目与署名
 
-## 友情链接
+本项目建立在他人的工作之上，完整清单见 [NOTICE.md](NOTICE.md)。摘要：
 
-[dsh-market](https://github.com/dsh-market/dsh-market) 是 DeepSeek Harness 社区插件市场，可在 Harness 界面中浏览和搜索插件、查看截图、安装或更新包、启停插件以及切换主题。
+- **[dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop)**
+  （MIT，© DataElement）—— 本 fork 的上游项目，绝大部分代码来自他们。
+- **[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)**
+  （MIT）—— 应用内承载的 Agent 运行时与 Web UI；以 tarball 形式内置于
+  `packages/harness-0.1.2-rc.1/`，并通过 `patches/` 下 21 个
+  `patch-package` 补丁做适配。
+- **Electron**、**electron-builder**、**electron-vite** 及
+  `package-lock.json` 中列出的其他依赖，各自遵循其原有许可证。
+
+「DeepSeek」「DSH Desktop」名称与图标归各自所有者所有；
+本 fork 与其无任何隶属或背书关系。
 
 ## 许可证
 
-DSH Desktop 采用 [MIT License](LICENSE) 开源。
-
-DeepSeek Harness 及其依赖仍遵循各自的上游许可证与商标规则。DSH Desktop 是独立的社区桌面应用。
+基于 [MIT 许可证](LICENSE)开源 —— 允许商用、修改与再分发，
+前提是保留版权声明。上游代码 © DataElement；fork 修改 © FengZH1991。

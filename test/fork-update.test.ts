@@ -205,8 +205,8 @@ describe('fork updater wiring', () => {
     expect(main).not.toContain("from './update/update-manager'")
   })
 
-  it('bakes fork-update.json into local builds, never upstream builds', async () => {
-    const local = await readFile(path.join(projectRoot, 'electron-builder.local.cjs'), 'utf8')
+  it('bakes fork-update.json into fork builds, never upstream builds', async () => {
+    const local = await readFile(path.join(projectRoot, 'electron-builder.fork.cjs'), 'utf8')
     expect(local).toContain('fork-update.json')
     expect(local).toContain('publish: null')
 

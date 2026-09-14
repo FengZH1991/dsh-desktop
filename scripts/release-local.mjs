@@ -9,7 +9,7 @@
  *   1. bump package.json to the fork version line (`<base>-feng.N`,
  *      auto-incremented unless --version pins one);
  *   2. commit + push so the release tag points at a commit GitHub has;
- *   3. build the macOS arm64 zip/dmg with electron-builder.local.cjs
+ *   3. build the macOS arm64 zip/dmg with electron-builder.fork.cjs
  *      (publish: null — the zip must NOT carry upstream's app-update.yml);
  *   4. compute sha512 + size and emit dist/latest-mac.json;
  *   5. create (or update) GitHub release `v<version>` on the fork with the
@@ -148,7 +148,7 @@ function main() {
         '--publish',
         'never',
         '--config',
-        'electron-builder.local.cjs'
+        'electron-builder.fork.cjs'
       ],
       { env }
     )

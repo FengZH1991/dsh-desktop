@@ -1,130 +1,130 @@
 <h1 align="center">
   <img src="docs/images/readme-logo-black-v020.png" width="64" alt="DSH Desktop logo" valign="middle" />
-  DSH Desktop
+  DSH Desktop — Community Fork
 </h1>
 
 <p align="center">
-  A local-first, cross-platform desktop app for
-  <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>.
+  A local-first desktop app for
+  <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>,
+  forked from <a href="https://github.com/dataelement/dsh-desktop">dataelement/dsh-desktop</a>
+  with a self-hosted auto-update channel that works for unsigned builds.
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ru.md">Русский</a> · <a href="README.es.md">Español</a> · <a href="README.pt.md">Português</a>
+  <a href="README.md">English</a> · <a href="README.zh.md">简体中文</a>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-171513.svg" /></a>
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-171513.svg" />
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-x64-171513.svg" />
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-Apple%20Silicon-171513.svg" />
+  <a href="https://github.com/FengZH1991/dsh-desktop/releases"><img alt="Releases" src="https://img.shields.io/badge/download-releases-171513.svg" /></a>
 </p>
 
-![DSH Desktop overview with portable presets, model providers, phone control, and editable PPT generation](docs/images/dsh-desktop-hero-v021.png)
+> [!NOTE]
+> This is an **unofficial community fork**, not the official DSH Desktop.
+> For the official, code-signed and notarized product (macOS Intel/ARM,
+> Windows x64), use [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop)
+> and [dshdesktop.com](https://www.dshdesktop.com/).
 
-<p align="center"><strong>Use official DeepSeek models or mainstream third-party providers, manage portable Agent presets, continue Harness sessions from your phone, and turn source material into editable PPTX decks.</strong></p>
+## Why this fork exists
 
-DSH Desktop packages the local DeepSeek Harness experience as an installed desktop application. It starts Harness automatically, keeps profiles, plugins, workspaces, model settings, and sessions outside the application directory, and opens the full Harness interface as soon as the local runtime is ready.
+The official desktop app auto-updates from the vendor's signed release feed.
+That mechanism requires Apple Developer ID signing, which a personal build
+does not have — so a self-built copy would silently fall behind upstream
+forever. This fork adds an update channel that any fork builder can operate
+from their own GitHub Releases, no signing certificate required.
 
-> [!IMPORTANT]
-> DSH Desktop is an early preview built on the rapidly evolving `@deepseek-ai/dsh@0.1.2-rc.1`. macOS releases are code-signed and notarized by Apple. Windows x64 installers are code-signed; Windows security warnings may still decrease gradually as the publisher builds download and installation reputation.
+## What the fork changes
 
-## Download
+Everything from upstream 0.1.1, plus:
 
-We offer stable and preview releases: download the **stable release**, recommended for everyday use, from our [official website](https://www.dshdesktop.com/#download). To try a **preview release**, choose a version marked **Pre-release** on [GitHub Releases](https://github.com/dataelement/dsh-desktop/releases).
+- **Self-hosted auto-update for unsigned builds** — the app checks a
+  `latest-mac.json` manifest on this repository's GitHub Releases, verifies
+  the download by SHA-512, and installs it with a swap-style installer
+  (extract → identity check → swap after quit → relaunch, with automatic
+  rollback). The upstream update UI, state machine, and "skip this version"
+  behavior are reused unchanged; Windows is not supported by the fork
+  installer yet.
+- **Global hotkey** to summon and dismiss the window.
+- **Native desktop notifications** for events that block on a person.
+- **One-command release tooling** — `npm run release:local` bumps the
+  version, builds, hashes, and publishes a GitHub release complete with the
+  update manifest.
+- Fork releases use the version line `<upstream-version>-feng.N`
+  (e.g. `0.1.1-feng.2`), so they order cleanly against upstream versions.
 
-Preview releases include our newest features and closely track the latest official DeepSeek Harness versions. They may be incompatible with community plugins and are **not recommended for general users**. Early adopters are welcome to try them and share feedback in our community; we roll out updates to the wider community only after validation by early adopters.
+## Download and install (macOS Apple Silicon)
 
-Installed builds check for updates shortly after startup and every six hours. When a new version is available, DSH Desktop asks before downloading it; installation begins only after you choose **Restart and install**. You can also check manually from the application menu or skip one version without hiding future releases.
+Grab `dsh-desktop-mac-arm64.zip` (or the DMG) from
+[Releases](https://github.com/FengZH1991/dsh-desktop/releases).
 
-## Community
-
-<p align="center">
-  Scan the QR code below with WeChat to join the DSH Desktop community group.<br />
-  <img src="docs/images/wechat-group-20260815.png" width="220" alt="DSH Desktop WeChat group QR code" /><br />
-  Prefer Discord? <a href="https://discord.gg/he2gAKCpj">Join the DSH Desktop Discord community</a>.
-</p>
-
-## What DSH Desktop adds
-
-DeepSeek Harness already provides the Agent runtime and Web UI. DSH Desktop adds the native host capabilities needed for a practical desktop product:
-
-- Starts and stops Harness without requiring a separate CLI or browser tab
-- Uses the native system directory picker to add and manage project workspaces
-- Supports official DeepSeek models and mainstream third-party model providers
-- Imports and exports complete custom Agent presets as portable [`.dshpreset` packages](docs/preset-packages.md), with conflict checks and a trust warning before installation
-- Turns source material into editable PPTX decks through the built-in PPT mode
-- Preserves profiles, plugins, workspaces, sessions, and model settings across app upgrades
-- Detects startup and frontend plugin failures, keeps diagnostics in `harness.log`, and offers guided recovery actions
-- Provides a non-destructive Safe Mode that temporarily blocks third-party plugins
-- Lets a paired phone continue sessions over the local network or an optional temporary public tunnel
-- Checks for desktop updates and keeps download and installation under user control
-- Adapts native menus, titlebar behavior, window focus, theme, and application branding for macOS and Windows
-
-## PPT generation
-
-Enable the **PPT** button, choose a template, and describe the deck you need. The built-in catalog includes **16 templates and 192 layouts** with editable PPTX output. Previews use English; decks can use English or Chinese, with corresponding font settings. Preview language does not determine output language.
-
-PPT is preinstalled, and its automatic instructions apply only to sessions where the PPT button is enabled. See the [PPT runtime guide](packages/ppt-runtime/README.md) for templates, validation, and source acknowledgments.
-
-## Phone access
-
-Choose **Connect Phone…** from the `Harness` menu and scan the pairing code. The desktop asks you to approve the connection before the phone can access sessions.
-
-Harness itself remains on a random `127.0.0.1` port. Phone access uses a separate paired bridge. It can stay on the local network or, when you choose remote access, use a temporary Cloudflare Quick Tunnel. Disconnecting the phone from the desktop invalidates the mobile session.
-
-If Cloudflare fails to start, the app tries Pinggy. If a Cloudflare pairing link appears but your phone cannot open it, choose **Can’t open? Try another link** to switch to Pinggy.
-
-## Safe Mode and recovery
-
-If a third-party plugin interferes with startup or rendering, DSH Desktop can identify the implicated plugin from runtime and frontend evidence and open a guided recovery surface.
-
-Choose **Restart as Safe Mode…** from the `Harness` menu to start an isolated profile containing only official core bundles. The Agent, sessions, model settings, and workspaces remain available while third-party plugins from the normal profile stay blocked. You can remove selected plugins or return to a normal launch from the Safe Mode banner.
-
-Recovery screens check for compatible plugin updates. When available, you can upgrade an affected plugin; Safe Mode also offers batch upgrades. For help, hover over **WeChat group** to display its QR code, or click **Discord** to open the community.
-
-If the normal interface cannot be reached, start DSH Desktop with `--safe-mode`. On macOS:
+These builds are **not code-signed or notarized**. macOS Gatekeeper will warn
+on first launch — either right-click the app and choose **Open**, or run:
 
 ```sh
-open -a "DSH Desktop" --args --safe-mode
+xattr -dr com.apple.quarantine "/Applications/DSH Desktop.app"
 ```
 
-## Local data and security
+Once installed, the app checks for fork updates shortly after startup and
+every six hours, and installs them through its own **Restart and install**
+flow. You can also check manually from the application menu.
 
-- The Harness Web UI is served only on a random loopback port.
-- The renderer has no Node.js privileges and uses context isolation and sandboxing.
-- Webviews, untrusted in-app navigation, and unexpected permission requests are blocked.
-- External web links open in the system browser.
-- User profiles and sessions live under Electron's per-user application data directory, not inside the installed app.
-- Phone access requires a short-lived pairing token and explicit desktop approval.
+## Run your own update channel
 
-## Platform support
+The update feed is just a JSON manifest on GitHub Releases, so any fork can
+operate its own channel:
 
-| Platform | Distribution | Status |
-| --- | --- | --- |
-| macOS Apple Silicon | Signed and notarized DMG/ZIP | Supported |
-| macOS Intel | Signed and notarized DMG/ZIP | Supported |
-| Windows x64 | Code-signed NSIS installer | Supported |
-| Windows ARM64 | — | Not currently supported |
-| Linux | — | Not currently supported |
+1. Edit [`build/fork-update.json`](build/fork-update.json) to point at **your**
+   repository's releases.
+2. Build with the fork packaging config:
+   ```sh
+   npm install          # applies the patch-package patches under patches/
+   npm run test && npm run typecheck
+   npm run package:fork:mac:arm64
+   ```
+3. Publish a release (requires [`gh`](https://cli.github.com/) authentication
+   with `repo` scope):
+   ```sh
+   npm run release:local          # add --dry-run to preview
+   ```
 
-Harness includes target-native dependencies, so every release artifact is built on the matching operating system and architecture.
+The release script bumps the `-feng.N` suffix, commits, pushes, builds the
+zip/dmg, computes the SHA-512 manifest, and attaches everything to a GitHub
+release. Installed copies pick the new version up automatically.
 
-## Development and architecture
+If both an upstream `app-update.yml` and `fork-update.json` are present in a
+build, the upstream manager wins — the fork channel only activates when the
+upstream channel is absent, so merging future upstream changes to
+`src/main/update/update-manager.ts` stays conflict-free.
 
-Contributions are welcome. Start with the public engineering documentation:
+## Documentation
 
-- [Development guide](docs/development.md) — setup, validation, patch maintenance, and target-native packaging
-- [Architecture](docs/architecture.md) — runtime flow, persistent data, security boundaries, recovery, mobile access, and updates
-- [Release runbook](docs/release-runbook.md) — signing and publication controls
-- [Preset package format](docs/preset-packages.md) — portable Agent preset contract
+- [Architecture](docs/architecture.md) and [development guide](docs/development.md)
+  — inherited from upstream; sections about the official update feed and
+  code signing describe the *upstream* product, not this fork.
+- [Preset package format](docs/preset-packages.md)
+- [PPT runtime guide](packages/ppt-runtime/README.md)
 
-Before submitting a change, run `npm test`, `npm run typecheck`, and `npm run build`, then exercise the affected real application flow. Never include real API keys in issues, logs, screenshots, or test data.
+## Third-party credits and attribution
 
-## Friends
+This project is built on the work of others — see [NOTICE.md](NOTICE.md) for
+the full list. In short:
 
-[dsh-market](https://github.com/dsh-market/dsh-market) is the community plugin market for DeepSeek Harness. Browse and search plugins, preview screenshots, install or update packages, enable or disable plugins, and switch themes from the Harness interface.
+- **[dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop)**
+  (MIT, © DataElement) — the upstream project this fork is based on; nearly
+  all of the codebase is theirs.
+- **[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)**
+  (MIT) — the Agent runtime and Web UI bundled by the app; vendored under
+  `packages/harness-0.1.2-rc.1/` and adjusted via the 21 `patch-package`
+  patches in `patches/`.
+- **Electron**, **electron-builder**, **electron-vite** and the other
+  dependencies listed in `package-lock.json`, each under its own license.
+
+"DeepSeek" and "DSH Desktop" names and logos belong to their respective
+owners; this fork is not affiliated with or endorsed by them.
 
 ## License
 
-DSH Desktop is open source under the [MIT License](LICENSE).
-
-DeepSeek Harness and its dependencies remain subject to their respective upstream licenses and trademark policies. DSH Desktop is an independent community desktop application.
+Open source under the [MIT License](LICENSE) — commercial use, modification,
+and redistribution are permitted provided the copyright notices are retained.
+Upstream code © DataElement; fork modifications © FengZH1991.
