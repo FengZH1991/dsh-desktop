@@ -1,0 +1,13 @@
+diff --git a/node_modules/@deepseek-ai/dsh-plugin-package-inventory-deepseek/lib/index.js b/node_modules/@deepseek-ai/dsh-plugin-package-inventory-deepseek/lib/index.js
+index 4ea1bb2..547ab7f 100644
+--- a/node_modules/@deepseek-ai/dsh-plugin-package-inventory-deepseek/lib/index.js
++++ b/node_modules/@deepseek-ai/dsh-plugin-package-inventory-deepseek/lib/index.js
+@@ -83,7 +83,7 @@ var PackageIdentityResolver = class {
+ 		let manifest;
+ 		if (packageName !== void 0) {
+ 			manifest = barePackageManifest(packageName, anchors);
+-			if (manifest === void 0) throw new Error(`plugin-package-inventory-deepseek: cannot resolve active package ${JSON.stringify(packageName)}`);
++			/* fork: an unresolvable plugin package degrades to an unknown identity instead of failing the request */
+ 		} else if (!entry.options.name.startsWith("cordis:")) {
+ 			const moduleUrl = isAbsolute(entry.options.name) ? pathToFileURL(entry.options.name) : new URL(entry.options.name, treeBase);
+ 			if (moduleUrl.protocol === "file:") manifest = nearestManifest(fileURLToPath(moduleUrl));

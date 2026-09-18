@@ -97,11 +97,30 @@ build, the upstream manager wins — the fork channel only activates when the
 upstream channel is absent, so merging future upstream changes to
 `src/main/update/update-manager.ts` stays conflict-free.
 
+## Official product and upstream releases
+
+This repository is a community fork. For the official, signed builds use the
+vendor's own channels:
+
+- Official downloads: <https://dshdesktop.com/#download> (Chinese: <https://dshdesktop.com/zh/>)
+- Upstream source and **Pre-release** builds: <https://github.com/dataelement/dsh-desktop/releases>
+
+## Technical facts
+
+- Vendors the DeepSeek Harness runtime `@deepseek-ai/dsh@0.1.2-rc.1` as pinned
+  tarballs plus `patch-package` patches — the app runs fully offline, no global
+  install required.
+- Headless/automation entry: the bundled runtime also accepts `--safe-mode`.
+- LAN mobile access uses a **Cloudflare Quick Tunnel**, so a phone on the same
+  network can drive a session without exposing a port.
+- Windows packaging uses **NSIS** installers (macOS ships DMG + ZIP).
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) and [development guide](docs/development.md)
   — inherited from upstream; sections about the official update feed and
   code signing describe the *upstream* product, not this fork.
+- [Model-switch troubleshooting](docs/model-switch-troubleshooting.md) — 三类失败（容量/溢出/REQUEST_EXTENSION）的成因与修复
 - [Preset package format](docs/preset-packages.md)
 - [PPT runtime guide](packages/ppt-runtime/README.md)
 

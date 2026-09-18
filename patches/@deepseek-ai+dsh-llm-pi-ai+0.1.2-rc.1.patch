@@ -1,13 +1,15 @@
 diff --git a/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js b/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js
-index 5c89b80..193f5b7 100644
+index c25e5c7..1cdb0d0 100644
 --- a/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js
 +++ b/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js
-@@ -1278,8 +1278,9 @@ function mapUsage(usage) {
+@@ -1289,8 +1289,11 @@ function mapUsage(usage) {
  	};
  }
  function classifyPiAiError(message) {
 -	if (/\b(?:401|403)\b/.test(message)) return "AUTH";
  	if (isQuotaExceededError(message)) return QUOTA_EXCEEDED_CODE;
++	/* fork: provider capacity/overload text is transient — classify as retryable instead of non-retryable PI_AI_ERROR */
++	if (/\b(?:at|over)\s+capacity\b|\boverloaded\b|server is busy|temporarily (?:unavailable|overloaded)/i.test(message)) return "RATE_LIMIT";
 +	if (/\b401\b/.test(message)) return "AUTH";
 +	if (/\b403\b/.test(message)) return "FORBIDDEN";
  	if (/\b429\b|rate.?limit/i.test(message)) return "RATE_LIMIT";

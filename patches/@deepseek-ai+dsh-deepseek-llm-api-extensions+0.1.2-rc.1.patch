@@ -1,0 +1,30 @@
+diff --git a/node_modules/@deepseek-ai/dsh-deepseek-llm-api-extensions/lib/index.js b/node_modules/@deepseek-ai/dsh-deepseek-llm-api-extensions/lib/index.js
+index 35c8087..1e3792d 100644
+--- a/node_modules/@deepseek-ai/dsh-deepseek-llm-api-extensions/lib/index.js
++++ b/node_modules/@deepseek-ai/dsh-deepseek-llm-api-extensions/lib/index.js
+@@ -70,10 +70,21 @@ var DeepSeekLlmApiExtensionRegistry = class extends Service {
+ 	async prepare(request) {
+ 		request.signal.throwIfAborted();
+ 		const entries = [...this.providers.entries()];
+-		const prepared = await abortable(Promise.all(entries.map(async ([field, provider]) => ({
+-			field,
+-			result: await provider.prepare(request)
+-		}))), request.signal);
++		/* fork: one failing contributor must not reject the whole request — skip its field and warn */
++		const prepared = await abortable(Promise.all(entries.map(async ([field, provider]) => {
++			try {
++				return {
++					field,
++					result: await provider.prepare(request)
++				};
++			} catch (error) {
++				this.ctx?.logger?.warn?.(`deepseek request extension ${JSON.stringify(field)} prepare failed: ${error instanceof Error ? error.message : String(error)}; skipping field`);
++				return {
++					field,
++					result: void 0
++				};
++			}
++		})), request.signal);
+ 		const fields = Object.create(null);
+ 		const callbacks = [];
+ 		for (const { field, result } of prepared) {

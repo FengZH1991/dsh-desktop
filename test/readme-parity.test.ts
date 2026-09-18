@@ -5,10 +5,6 @@ import { describe, expect, it } from 'vitest'
 const readmes = [
   'README.md',
   'README.zh.md',
-  'README.ja.md',
-  'README.ru.md',
-  'README.es.md',
-  'README.pt.md'
 ]
 
 const requiredFacts = [

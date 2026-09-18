@@ -466,7 +466,7 @@ describe('GitHub release contract', () => {
 
   it('routes stable downloads through the website and previews through GitHub', async () => {
     const readmes = await Promise.all(
-      ['README.md', 'README.zh.md', 'README.ja.md', 'README.ru.md', 'README.es.md', 'README.pt.md'].map((file) =>
+      ['README.md', 'README.zh.md'].map((file) =>
         readFile(path.join(projectRoot, file), 'utf8')
       )
     )

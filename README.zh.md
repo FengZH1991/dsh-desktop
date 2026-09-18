@@ -87,10 +87,26 @@ xattr -dr com.apple.quarantine "/Applications/DSH Desktop.app"
 上游更新器优先——只有上游渠道不存在时 fork 渠道才生效，
 因此将来合并上游对 `src/main/update/update-manager.ts` 的改动不会冲突。
 
+## 官方产品与上游版本
+
+本仓库是社区 fork。需要官方签名版本请看原厂商渠道：
+
+- 官方下载：<https://dshdesktop.com/#download>（中文站 <https://dshdesktop.com/zh/>）
+- 上游源码与 **Pre-release** 预览版：<https://github.com/dataelement/dsh-desktop/releases>
+
+## 技术要点
+
+- 内置 DeepSeek Harness 运行时 `@deepseek-ai/dsh@0.1.2-rc.1`，以固定版本 tarball +
+  `patch-package` 补丁方式交付，应用可完全离线运行，无需全局安装。
+- 运行时同时支持 `--safe-mode`（安全模式）启动，便于排障。
+- 局域网手机端访问通过 **Cloudflare Quick Tunnel** 打通，同一网络下手机即可操作会话。
+- Windows 安装包使用 **NSIS**，macOS 提供 DMG + ZIP。
+
 ## 文档
 
 - [架构](docs/architecture.md) 与 [开发指南](docs/development.md) —— 继承自上游；
   其中关于官方更新源与代码签名的章节描述的是**上游产品**，不适用于本 fork。
+- [模型切换排障](docs/model-switch-troubleshooting.md) —— 容量/上下文溢出/REQUEST_EXTENSION 三类失败的成因与修复
 - [Preset 包格式](docs/preset-packages.md)
 - [PPT 运行时指南](packages/ppt-runtime/README.md)
 

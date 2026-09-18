@@ -1,0 +1,25 @@
+diff --git a/node_modules/@deepseek-ai/dsh-session-log-deepseek/lib/index.js b/node_modules/@deepseek-ai/dsh-session-log-deepseek/lib/index.js
+index 9a64be4..0fb0165 100644
+--- a/node_modules/@deepseek-ai/dsh-session-log-deepseek/lib/index.js
++++ b/node_modules/@deepseek-ai/dsh-session-log-deepseek/lib/index.js
+@@ -60,14 +60,17 @@ function acceptedThrough(session) {
+ 	const start = previous?.scannedEvents ?? SessionLogOffset(0);
+ 	for (let index = start; index < length; index++) {
+ 		const event = session.eventAt(SessionSeq(index));
+-		if (event === void 0) throw new Error(`session-log-deepseek: missing event ${String(index)} below captured length ${String(length)}`);
++		/* fork: compaction can prune events below the captured length; skip holes instead of failing */
++		if (event === void 0) continue;
+ 		if (event.type !== "session-log-deepseek/delivery-accepted") continue;
++		/* fork: a malformed watermark is skipped rather than failing the whole request */
++		let acceptedSeq;
+ 		try {
+ 			acceptedSeq = SessionSeq(event.data.throughSeq);
+ 		} catch {
+-			throw new Error(`session-log-deepseek: malformed acceptance watermark at seq ${event.seq}`);
++			continue;
+ 		}
+-		if (typeof event.data.sessionId !== "string" || event.data.sessionId.length === 0 || acceptedSeq >= event.seq) throw new Error(`session-log-deepseek: malformed acceptance watermark at seq ${event.seq}`);
++		if (typeof event.data.sessionId !== "string" || event.data.sessionId.length === 0 || acceptedSeq >= event.seq) continue;
+ 		if (event.data.sessionId !== session.id) continue;
+ 		if (acceptedSeq > throughSeq) throughSeq = acceptedSeq;
+ 	}
