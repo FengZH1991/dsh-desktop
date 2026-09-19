@@ -377,6 +377,10 @@
       {
         "from": "build/windows-menu.html",
         "to": "windows-menu.html"
+      },
+      {
+        "from": "build/agent-assets",
+        "to": "agent-assets"
       }
     ],
     "publish": [

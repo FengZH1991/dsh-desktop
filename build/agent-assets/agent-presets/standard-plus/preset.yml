@@ -1,0 +1,3 @@
+name: 标准增强
+description: 在标准模式基础上接入 MCP 工具生态：Context7 实时文档、Chrome DevTools 浏览器调试、Serena 符号级代码智能、GitHub 仓库操作。
+order: 2

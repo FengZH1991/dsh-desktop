@@ -54,3 +54,23 @@
 - insert:
     - id: dsh-desktop-preset-transfer
       name: dsh-desktop-preset-transfer
+
+# Session telemetry defaults to local-only: records go to a localhost OTel
+# collector (see README "本地遥测" — docker container `dsh-otelcol`) instead of
+# the upstream hosted endpoint. Nothing leaves the machine. Langfuse cannot
+# ingest OTel logs (its OTLP endpoint accepts traces/metrics only), which is
+# why the target is a collector rather than Langfuse directly. Both
+# DSH_TELEMETRY_MODE and DSH_TELEMETRY_OTLP_URL still override these defaults.
+- id: session-telemetry-otel
+  config:
+    mode: !!js process.env.DSH_TELEMETRY_MODE || 'FULL'
+    shutdownTimeoutMillis: 3000
+    exporter:
+      url: !!js >-
+        process.env.DSH_TELEMETRY_OTLP_URL ??
+        'http://localhost:4318/v1/logs'
+      compression: gzip
+      timeoutMillis: 3000
+    processor:
+      scheduledDelayMillis: 10000
+      maxQueueSize: 2048

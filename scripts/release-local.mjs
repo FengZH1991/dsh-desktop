@@ -92,6 +92,19 @@ function bumpPackageJson(version) {
   const updated = text.replace(/"version": "[^"]+"/, `"version": "${version}"`)
   if (updated === text) fail('package.json 中没有找到 version 字段')
   writeFileSync(file, updated)
+
+  // package-lock.json carries the version twice (root + packages[""]);
+  // test/version-consistency.test.ts fails the suite when they drift.
+  const lockFile = path.join(root, 'package-lock.json')
+  const lock = readFileSync(lockFile, 'utf8')
+  const lockUpdated = lock.replace(
+    /^(\s*)"version": "[^"]+"/m,
+    `$1"version": "${version}"`
+  ).replace(
+    /("": \{\n\s*)"version": "[^"]+"/,
+    `$1"version": "${version}"`
+  )
+  if (lockUpdated !== lock) writeFileSync(lockFile, lockUpdated)
 }
 
 function main() {
@@ -127,7 +140,7 @@ function main() {
   // --- version bump ----------------------------------------------------------
   if (version !== current) {
     bumpPackageJson(version)
-    run('git', ['add', 'package.json'])
+    run('git', ['add', 'package.json', 'package-lock.json'])
     run('git', ['commit', '-m', `chore(release): ${tag}`])
   }
   run('git', ['push', 'origin', 'HEAD'])

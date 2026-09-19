@@ -1,7 +1,7 @@
 import { execFileSync, type SpawnOptionsWithoutStdio } from 'node:child_process'
 import type { EventEmitter } from 'node:events'
 import { createWriteStream, existsSync, mkdirSync, type WriteStream } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, cp } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 import type { RuntimePhase, RuntimeSnapshot } from '../../shared/contracts'
@@ -15,6 +15,12 @@ export interface HarnessRuntimeOptions {
   dshSafePatchPath: string
   dshHome: string
   logPath: string
+  /**
+   * Bundled agent assets directory (agent-presets/, skills/, hooks/).
+   * Synced into dshHome on every launch so shipped updates reach existing
+   * installs without touching user-created entries alongside them.
+   */
+  bundledAgentAssetsPath?: string
   launchProcess(
     executablePath: string,
     args: string[],
@@ -380,6 +386,8 @@ export class HarnessRuntime {
     await mkdir(dirname(this.options.logPath), { recursive: true })
     this.logStream ??= createWriteStream(this.options.logPath, { flags: 'a' })
 
+    await this.syncBundledAgentAssets()
+
     const port = await reservePort()
     const url = `http://127.0.0.1:${port}`
     const args = buildNodeArguments(
@@ -505,6 +513,37 @@ ${cause}`
     this.url = undefined
     this.launchToken = undefined
     this.setState('idle', 'Harness is not running.')
+  }
+
+  /**
+   * Copy bundled agent assets into the harness home before launch.
+   *
+   * Mapping (force-overwritten every launch so app updates propagate; entries
+   * the user created alongside the shipped ones are left untouched):
+   *   agent-assets/agent-presets/<id>/ → <dshHome>/.agent-presets/<id>/
+   *   agent-assets/skills/<name>/      → <dshHome>/skills/<name>/
+   *   agent-assets/hooks/*             → <dshHome>/hooks/
+   */
+  private async syncBundledAgentAssets(): Promise<void> {
+    const assetsRoot = this.options.bundledAgentAssetsPath
+    if (!assetsRoot || !existsSync(assetsRoot)) return
+    const targets: Array<[string, string]> = [
+      [join(assetsRoot, 'agent-presets'), join(this.options.dshHome, '.agent-presets')],
+      [join(assetsRoot, 'skills'), join(this.options.dshHome, 'skills')],
+      [join(assetsRoot, 'hooks'), join(this.options.dshHome, 'hooks')]
+    ]
+    for (const [from, to] of targets) {
+      if (!existsSync(from)) continue
+      try {
+        await cp(from, to, { recursive: true, force: true })
+        this.writeLog(`[desktop] synced agent assets ${from} -> ${to}`)
+      } catch (error) {
+        // Asset sync must never block a launch: a read-only or locked target
+        // leaves the previous copy in place, which is still usable.
+        const message = error instanceof Error ? error.message : String(error)
+        this.writeLog(`[desktop] agent assets sync failed ${from}: ${message}`)
+      }
+    }
   }
 
   private async stopChild(child: HarnessChildProcess): Promise<void> {
